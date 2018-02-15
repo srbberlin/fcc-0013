@@ -1,0 +1,8 @@
+{
+  "global": {
+    "ReactDOM": true,
+    "React": true,
+    "Redux": true,
+    "uuid": true
+  }
+}
