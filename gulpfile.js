@@ -1,32 +1,37 @@
 const gulp = require('gulp')
+const runSeq = require('run-sequence')
 const sass = require('gulp-sass')
 const sourcemaps = require('gulp-sourcemaps')
 const babel = require('gulp-babel')
 const browserSync = require('browser-sync')
-const del = require('del')
 
 var config = {
-  base:    __dirname + '/',
   cssin:   __dirname + '/sass/**/*.sass',
   jsin:    __dirname + '/babel/**/*.js',
-  cssout:  __dirname + '/css/',
-  jsout:   __dirname + '/js/'
+  htmlin:  __dirname + '/html/**/*.html',
+  cssout:  __dirname + '/docs/css/',
+  jsout:   __dirname + '/docs/js/',
+  htmlout: __dirname + '/docs/'
 }
 
 gulp.task('reload', function () {
   browserSync.reload()
 })
 
-gulp.task('serve', ['sass', 'babel'], function () {
+gulp.task('serve', ['html', 'sass', 'babel'], function () {
   browserSync({
     server: config.htmlout
   })
 
-  gulp.watch(config.html, ['reload'])
-  gulp.watch(config.jsin, ['babel', 'reload'])
-  gulp.watch(config.cssin, ['sass', 'reload'])
-  gulp.watch(config.imgin, ['images', 'reload'])
-  gulp.watch(config.htmlin, ['html', 'reload'])
+  gulp.watch(config.jsin, () => runSeq(['babel', 'reload']))
+  gulp.watch(config.cssin, () => runSeq(['sass', 'reload']))
+  gulp.watch(config.htmlin, () => runSeq(['html', 'reload']))
+})
+
+gulp.task('html', function () {
+  let path = config.htmlin
+  return gulp.src(path)
+    .pipe(gulp.dest(config.htmlout))
 })
 
 gulp.task('sass', function () {
@@ -47,6 +52,6 @@ gulp.task('babel', function () {
     .pipe(gulp.dest(config.jsout))
 })
 
-gulp.task('build', ['babel', 'sass'])
+gulp.task('build', ['html', 'babel', 'sass'])
 
 gulp.task('default', ['serve'])

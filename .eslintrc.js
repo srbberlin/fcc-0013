@@ -5,7 +5,16 @@ module.exports = {
         "es6": true
     },
     "extends": "eslint:recommended",
+    "globals": {
+        "angular": true,
+        "React": true,
+        "ReactDom": true,
+        "d3": true,
+        "console.log": true,
+        "__dirname": true
+    },
     "rules": {
+        "no-console":0,
         "indent": [
             "error",
             2
