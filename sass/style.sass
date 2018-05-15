@@ -4,6 +4,20 @@ html
 *, *:before, *:after
   box-sizing: inherit
 
+.headl
+  height: 2.4em
+
+.ingds
+  height: 10em
+
+.proc
+  height: 15em
+
+.headl, .ingds, .proc
+  padding: .5em 1em
+
+$lgr: #CCCCCC
+$mgr: gray
 
 /* Extract from normalize.css by Nicolas Gallagher and Jonathan Neal git.io/normalize */
 
@@ -20,7 +34,8 @@ html, body
   line-height: 1.5
 
 html
-  overflow-x: hidden
+  //overflow-x: hidden
+  overflow: hidden
 
 .w3-btn, .w3-button
   border: none
@@ -50,7 +65,7 @@ html
 .w3-bar
   width: 100%
   overflow: hidden
-  background-color: #CCCCCC
+  background-color: $lgr
 
 .w3-bar .w3-bar-item
   padding: 8px 16px
@@ -74,34 +89,55 @@ html
 .w3-border
   border: 1px solid #ccc!important
 
+/* Local definitions */
+
+html
+  //min-height: 100%
+  height: 100%
+
+body
+  background-image: linear-gradient($mgr,$lgr)
+  height: 100%
+
 #root
-  position: absolute
-  width: 80%
+  @media (max-width: 800px)
+    width: 80%
+
+  @media (min-width: 801px)
+    width: 640px
+
   height: 80%
-  top: 10%
-  left: 10%
-  padding-top: 16px
+  margin: 10% auto 10% auto
 
 #All
   height: 100%
+  background: linear-gradient($lgr,$mgr)
 
 #Head
-  margin-bottom: 16px
+  margin: 16px 0
+  background: linear-gradient(yellow,red)
 
 #Stage
-  height: calc(100% - 128px)
-  background-color: gray
+  height: calc(100% - 150px)
+  margin-bottom: 16px
+  background: linear-gradient($mgr,$lgr)
   overflow-y: auto
 
-#Select, #View, #Edit, #New, #Delete
+.filter, .select, .change, .show
   width: 100%
-  padding: 5px
+  height: 100%
+  padding: 15px
 
 .subcontainer, .selitem
   width: 100%
-  margin: 10px 0
   white-space: pre-line
+  resize: none
 
 .selitem
   cursor: pointer
 
+.navActive
+  background-color: $mgr
+  
+.navPassive
+  background-color: $lgr

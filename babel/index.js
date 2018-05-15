@@ -1,4 +1,4 @@
-// "use strict";
+"use strict";
 
 // ====================================================
 // Redux section
@@ -21,23 +21,68 @@ const SET_VISIBILITY_FILTER = 'SET_VISIBILITY_FILTER'   // Narrows the choices
 // Filter values, might be or'd together
 //
 
-const CATEGORY_NONE = 0   // Nothing
+const CATEGORY_000 = 0 // means all !!
 const CATEGORY_001 = 1
 const CATEGORY_002 = 2
 const CATEGORY_003 = 4
 const CATEGORY_004 = 8
-const CATEGORY_ALL = -1  // All
+const CATEGORY_005 = 16
+const CATEGORY_ALL = 31
+
+const allCats = [
+  CATEGORY_001,
+  CATEGORY_002,
+  CATEGORY_003,
+  CATEGORY_004,
+  CATEGORY_005
+]
+
+const verboseCats = {
+  [CATEGORY_001]: 'Breakfast',
+  [CATEGORY_002]: 'Dinner',
+  [CATEGORY_003]: 'Supper',
+  [CATEGORY_004]: 'Brunch',
+  [CATEGORY_005]: 'Vegatarian'
+}
 
 // ====================================================
-// Filter values verbose
+// Helper to generate selections
 //
 
-const categories = {
-  CATEGORY_001: 'Breakfast',
-  CATEGORY_002: 'Dinner',
-  CATEGORY_003: 'Supper',
-  CATEGORY_004: 'Vegatrian'
+const selectCat = (s, o, c = 'cats') => {
+  return (
+    <select className={c} value={s} onChange={o}>{
+      allCats.reduce((c, d, i, a) => {
+        c.push(<option key={i} value={d}>{verboseCats[d]}</option>)
+        return c
+      },[])}
+    </select>
+  )
 }
+
+const filterCats = (s, o, cls = 'sels') => {
+  return (
+    allCats.reduce((c, d, i, a) => {
+      if (d >= 0) {
+        c.push(
+          <div className={cls} key={i} id={verboseCats[d]}>
+            <input type='checkbox' value={d} checked={s & d} onChange={o}/>
+            {verboseCats[d]}
+          </div>
+        )
+      }
+      return c
+    },[])
+  )
+}
+
+const getVerboseCat = (d) => {
+  return verboseCats[d]
+}
+
+// ====================================================
+// Redux section
+//
 
 // ====================================================
 // Reducer implementing the commands
@@ -48,27 +93,24 @@ const recipes = (state, action) => {
   switch (action.type) {
     case INIT:
       res = {
-        visibility: -1,
         value: []}
       break
     case RESTART:
       res = {
-        visibility: action.state.visibility,
         value: action.state.value }
       break
     case ADD_RECIPE:
       res = {
-        visibility: state.visibility,
         value: state.value.concat([{
           id: action.id,
           title: action.title,
           ingredients: action.ingredients,
           procedure: action.procedure,
-          category: action.category }])}
+          category: action.category }])
+      }
       break;
     case CHANGE_RECIPE:
       res = {
-        visibility: state.visibility,
         value: state.value.map((act) => {
           if (act.id === action.id) {
             act.title = action.title
@@ -82,14 +124,9 @@ const recipes = (state, action) => {
       break;
     case DELETE_RECIPE:
       res = {
-        visibility: state.visibility,
-        value: state.value.filter((act) => { return act.id !== action.id })
-      }
-      break;
-    case SET_VISIBILITY_FILTER:
-      res = {
-        visibility: action.value,
-        value: state.value
+        value: state.value.filter((act) => {
+          return act.id !== action.id
+        })
       }
       break;
     default:
@@ -98,13 +135,17 @@ const recipes = (state, action) => {
   return res
 }
 
+const store = Redux.createStore(recipes)
+
 // ====================================================
-// Return command parameters
+// Construct commands
 //
 
 // ====================================================
+// Replaces the whole state with a new one
+//
 // Parameters
-//   state: { visibility: <number>, value: <array of recipes> }
+//   state: { value: <array of recipes> }
 //
 
 const restart = (state) => {
@@ -114,6 +155,9 @@ const restart = (state) => {
   }
 }
 
+// ====================================================
+// Add a new recipe
+//
 // ====================================================
 // Parameters
 //   t, i, p, c: self explanatory
@@ -131,17 +175,8 @@ const add = (t, i, p, c) => {
 }
 
 // ====================================================
-// Parameters
-//   id: UUID of the recipe
+// Change all of the recipies fields
 //
-
-const get = (id) => {
-  return {
-    type: GET_RECIPE,
-    value: id
-  }
-}
-
 // ====================================================
 // Parameters
 //   id, t, i, p, c: self explanatory
@@ -159,6 +194,9 @@ const change = (id, t, i, p, c) => {
 }
 
 // ====================================================
+// Delete one recipe
+//
+// ====================================================
 // Parameters
 //   id: UUID of the recipe
 //
@@ -171,19 +209,7 @@ const del = (id) => {
 }
 
 // ====================================================
-// Parameters
-//   v: ored value of none ore more filter values
-//
-
-const vis = (v) => {
-  return {
-    type: SET_VISIBILITY_FILTER,
-    value: v
-  }
-}
-
-// ====================================================
-// Using the local storage
+// Using the browsers local storage
 //
 
 // ====================================================
@@ -197,15 +223,26 @@ const storeLocal = () => {
 
 // ====================================================
 // Retrieve the state of the store from
-// the browsers local storage
+// the browsers local storage. Set a default entry
+// if there's none
 //
 
 const getLocal = () => {
   if (window.localStorage.recipes) {
     store.dispatch(restart(JSON.parse(window.localStorage.recipes)))
   } else {
-    store.dispatch(add('der erste Versuch', '1. Mut, \n2. Geld, \n3. Geduld', 'und viel mehr', CATEGORY_001))
-    store.dispatch(add('der zweite Versuch', 'Weas man so braucht ...', 'auch nicht viel mehr', CATEGORY_002))
+    store.dispatch(add(
+      'Honey Garlic Chicken with Rosemary', 
+      '3 tablespoons butter\n' +
+      '1 1/2 tablespoons garlic powder\n' +
+      '2 tablespoons rosemary\n' +
+      'salt and ground black pepper\n' +
+      '1/2 cup of honey\n' +
+      '6 skinless chicken thighs',
+      'Preheat oven to 375 degrees F (190 degrees C).\n\n' +
+      'Melt butter in a large saucepan over medium heat. Add garlic powder, rosemary, salt, and pepper; simmer until flavors combine, about 1 minute. Stir in honey; bring to a boil. Reduce heat to low. Dip chicken into sauce, 1 piece at a time, until coated. Place chicken on a 9x13-inch baking pan; pour remaining sauce over chicken.\n\n' +
+      'Bake chicken in the preheated oven until no longer pink at the bone and the juices run clear, about 30 minutes. An instant-read thermometer inserted near the bone should read 165 degrees F (74 degrees C). Remove from oven; immediately turn over chicken with tongs to coat the top with sauce.', 
+      CATEGORY_001))
     storeLocal()
   }
   let res = store.getState()
@@ -213,7 +250,26 @@ const getLocal = () => {
 }
 
 // ====================================================
-// Retrieves one recipe from storage
+// Helper functions to provide the store's data
+//
+
+// ====================================================
+// Get recipies according the filtersetting. The filter
+// defaults to all
+//
+
+const filteredRecipies = (c = CATEGORY_000) => {
+  let r = store.getState().value.reduce((acc, act) => {
+    if (c === CATEGORY_000 || (c & act.category) !== 0) {
+      acc.push(act)
+    }
+    return acc
+  }, [])
+  return r
+}
+
+// ====================================================
+// Get one recipe by id
 //
 
 const getRecipe = (id) => {
@@ -222,121 +278,162 @@ const getRecipe = (id) => {
   })[0]
 }
 
+// ====================================================
+// Add one recipe
+//
+
 const newRecipe = (t, i, p, c) => {
   let r = add(t, i, p, c)
   store.dispatch(r)
+  storeLocal()
   return r.id
 }
+
+// ====================================================
+// Change one recipe
+//
 
 const changeRecipe = (id, t, i, p, c) => {
   let r = change(id, t, i, p, c)
   store.dispatch(r)
+  storeLocal()
   return r.id
 }
+
+// ====================================================
+// Delete one recipe
+//
 
 const deleteRecipe = (id) => {
   let r = del(id)
   store.dispatch(r)
+  storeLocal()
   return null
 }
-
-const store = Redux.createStore(recipes)
 
 // ====================================================
 // Eventhandling
 //
 // All functions return objects used by the setState
-// function of the toplevel componet given to the
+// function of the toplevel componet by the
 // force function implemented there. The force function
 // is called by the eventhandlers of the navigation.
 //
 // Parameters and returned values are self explanatory.
 //
 
-const navStorageChange = (id) => {
+const RELOAD = true
+
+const setCategories = (v) => {
+  return { categories: v }
+}
+
+const valFilter = () => {
   return {
-    store: store.getState(),
-    id: id,
-    v: {
-      select: 'none',
-      view: 'block',
-      new: 'none',
-      edit: 'none',
-      delete: 'none'
-    }
+    filter: 'block',
+    select: 'none',
+    view: 'none',
+    new: 'none',
+    edit: 'none',
+    delete: 'none'
+  }
+}
+
+const valSelect = () => {
+  return {
+    filter: 'none',
+    select: 'block',
+    view: 'none',
+    new: 'none',
+    edit: 'none',
+    delete: 'none'
+  }
+}
+
+const valView = () => {
+  return {
+    filter: 'none',
+    select: 'none',
+    view: 'block',
+    new: 'none',
+    edit: 'none',
+    delete: 'none'
+  }
+}
+
+const valNew = () => {
+  return {
+    filter: 'none',
+    select: 'none',
+    view: 'none',
+    new: 'block',
+    edit: 'none',
+    delete: 'none'
+  }
+}
+
+const valEdit = () => {
+  return {
+    filter: 'none',
+    select: 'none',
+    view: 'none',
+    new: 'none',
+    edit: 'block',
+    delete: 'none'
+  }
+}
+
+const valDelete = () => {
+  return {
+    filter: 'none',
+    select: 'none',
+    view: 'none',
+    new: 'none',
+    edit: 'none',
+    delete: 'block'
+  }
+}
+
+const navFilter = () => {
+  return {
+    v: valFilter()
+  }
+}
+
+const navSelect = () => {
+  return {
+    v: valSelect()
+  }
+}
+
+const navView = () => {
+  return {
+    v: valView()
+  }
+}
+
+const navNew = () => {
+  return {
+    v: valNew()
+  }
+}
+
+const navEdit = () => {
+  return {
+    v: valEdit()
+  }
+}
+
+const navDelete = () => {
+  return {
+    v: valDelete()
   }
 }
 
 const navItem = (id) => {
   return {
     id: id,
-    v: {
-      select: 'none',
-      view: 'block',
-      new: 'none',
-      edit: 'none',
-      delete: 'none'
-    }
-  }
-}
-
-const navSelect = () => {
-  return {
-    v: {
-      select: 'block',
-      view: 'none',
-      new: 'none',
-      edit: 'none',
-      delete: 'none'
-    }
-  }
-}
-
-const navView = () => {
-  return {
-    v: {
-      select: 'none',
-      view: 'block',
-      new: 'none',
-      edit: 'none',
-      delete: 'none'
-    }
-  }
-}
-
-const navNew = () => {
-  return {
-    v: {
-      select: 'none',
-      view: 'none',
-      new: 'block',
-      edit: 'none',
-      delete: 'none'
-    }
-  }
-}
-
-const navEdit = () => {
-  return {
-    v: {
-      select: 'none',
-      view: 'none',
-      new: 'none',
-      edit: 'block',
-      delete: 'none'
-    }
-  }
-}
-
-const navDelete = () => {
-  return {
-    v: {
-      select: 'none',
-      view: 'none',
-      new: 'none',
-      edit: 'none',
-      delete: 'block'
-    }
+    v: valView()
   }
 }
 
@@ -344,34 +441,77 @@ const navDelete = () => {
 // React section
 //
 
+class Filter extends React.Component {
+  constructor (props) {
+    super(props)
+
+    this.setCats = this.setCats.bind(this)
+  }
+
+  setCats (e) {
+    this.props.force(setCategories(this.props.state.categories ^ e.target.value), RELOAD)
+  }
+
+  render () {
+    let v = this.props.display
+    return (
+      <div className='filter' style={{display: v}}>
+        {filterCats(this.props.state.categories, this.setCats)}
+      </div>
+    )
+  }
+}
+
 class Select extends React.Component {
   constructor (props) {
     super(props)
-    this.navItem = this.navItem.bind(this)
+    this.selectItem = this.selectItem.bind(this)
   }
 
-  navItem (e) { this.props.force(navItem(e.target.id)) }
+  selectItem (e) { 
+    this.props.force(navItem(e.target.id)) 
+  }
 
   render () {
-    console.log('render: Select')
-    let a = this.props
-    let v = a.v
-    let m = a.m
-    let j = 0
-    let r = []
+    let s = this.props.state
+    let v = this.props.display
+    let a = s.data
     return (
-      <div id='Select' style={{display: v}} >
+      <div className='select' style={{display: v}} >
         {
-          m.reduce((val, act) => {
-            // if (true) {
-            r = val.concat([
-              <div className='selitem' key={++j} id={act.id} onClick={this.navItem}>{act.title}</div>
-            ])
-            // }
-            return r
+          (a !== undefined) &&
+          a.reduce((val, act, i) => {
+            val.push(
+              <div
+                className='selitem' 
+                key={i} 
+                id={act.id} 
+                onClick={this.selectItem}>
+                {act.title}
+              </div>
+            )
+            return val
           },
-          r)
+          [])
         }
+      </div>
+    )
+  }
+}
+
+class Show extends React.Component {
+  constructor (props) {
+    super(props)
+  }
+
+  render () {
+    return (
+      <div className='show' style={{display: this.props.v}}>
+        <h3 className='subcontainer'>{this.props.i.title}</h3>
+        <h5 className='subcontainer'>{getVerboseCat(this.props.i.category)}</h5>
+        <div className='subcontainer'><h5>Ingredients</h5>{this.props.i.ingredients}</div>
+        <div className='subcontainer'><h5>Procedure</h5>{this.props.i.procedure}</div>
+        {this.props.b}
       </div>
     )
   }
@@ -380,30 +520,22 @@ class Select extends React.Component {
 class View extends React.Component {
   constructor (props) {
     super(props)
-
-    this.title = ''
-    this.ingedients = ''
-    this.procedure = ''
-    this.category = ''
   }
 
   render () {
-    console.log('render: View:', this.props.item)
-    let v = this.props.v
+    let v = this.props.display
     let i = this.props.item
-
-    this.title = i.title
-    this.ingredients = i.ingredients
-    this.procedure = i.procedure
-    this.category = i.category
-
+    if (! i) {
+      i = {
+        id: '',
+        title: '',
+        ingredients: '',
+        procedure: '',
+        category: 0,
+      }
+    }
     return (
-      <div id='View' style={{display: v}}>
-        <div className='subcontainer'>{this.title}</div>
-        <div className='subcontainer'>{this.ingredients}</div>
-        <div className='subcontainer'>{this.procedure}</div>
-        <div className='subcontainer'>{this.category}</div>
-      </div>
+      <Show i={i} v={v} />
     )
   }
 }
@@ -417,8 +549,10 @@ class Edit extends React.Component {
     this.procedureNew = this.procedureNew.bind(this)
     this.categoryNew = this.categoryNew.bind(this)
     this.save = this.save.bind(this)
+    this.cancel = this.cancel.bind(this)
 
     let i = this.props.item
+
     this.state = {
       id: i.id,
       title: i.title,
@@ -435,15 +569,30 @@ class Edit extends React.Component {
   categoryNew (e) { this.setState({category: e.target.value, reload: false}) };
 
   save (e) {
-    this.setState({reload: false})
+    this.setState({reload: true})
+    this.props.force(setCategories(this.props.state.categories | e.target.value))
     this.props.force(navItem(changeRecipe(this.state.id, this.state.title, this.state.ingredients, this.state.procedure, this.state.category)))
-    storeLocal()
   }
 
-  componentWillReceiveProps () {
-    if (this.state.reload) {
-      let i = this.props.item
+  cancel (e) {
+    this.setState({reload: true})
+    this.props.force(navItem(this.state.id))
+  }
 
+  componentWillReceiveProps (next) {
+    if (this.state.reload) {
+      let i = next.item
+
+      if (! i) {
+        i = {
+          id: '',
+          title: '',
+          ingredients: '',
+          procedure: '',
+          category: CATEGORY_001,
+        }
+      }
+  
       this.setState({
         id: i.id,
         title: i.title,
@@ -455,16 +604,17 @@ class Edit extends React.Component {
   }
 
   render () {
-    console.log('render: Edit:', this.props.item)
-    let v = this.props.v
-
+    let s = this.state
+    let v = this.props.display
     return (
-      <div id='Edit' style={{display: v}}>
-        <textarea className='subcontainer' onChange={this.titleNew} value={this.state.title} />
-        <textarea className='subcontainer' onChange={this.ingredientsNew} value={this.state.ingredients} />
-        <textarea className='subcontainer' onChange={this.procedureNew} value={this.state.procedure} />
-        <textarea className='subcontainer' onChange={this.categoryNew} value={this.state.category} />
+      <div className='change' style={{display: v}}>
+        <textarea className='subcontainer headl' onChange={this.titleNew} value={s.title} />
+        <textarea className='subcontainer ingds' onChange={this.ingredientsNew} value={s.ingredients} />
+        <textarea className='subcontainer proc' onChange={this.procedureNew} value={s.procedure} />
+        {selectCat(this.state.category, this.categoryNew)}
+        <br />
         <button onClick={this.save}>Save</button><br />
+        <button onClick={this.cancel}>Cancel</button><br />
       </div>
     )
   }
@@ -478,7 +628,7 @@ class New extends React.Component {
       title: '',
       ingredients: '',
       procedure: '',
-      category: ''
+      category: CATEGORY_001
     }
 
     this.titleNew = this.titleNew.bind(this)
@@ -494,25 +644,29 @@ class New extends React.Component {
   categoryNew (e) { this.setState({category: e.target.value}) }
 
   save (e) {
-    this.props.force(navStorageChange(newRecipe(this.state.title, this.state.ingredients, this.state.procedure, this.state.category)))
+    if (this.props.state.categories) {
+      this.props.force(setCategories(this.props.state.categories | this.state.category))
+    }
+    this.props.force(navItem(newRecipe(this.state.title, this.state.ingredients, this.state.procedure, this.state.category)), RELOAD)
     this.setState({
       title: '',
       ingredients: '',
       procedure: '',
-      category: ''
+      category: CATEGORY_001
     })
-    storeLocal()
   }
 
   render () {
-    console.log('render: New:')
-    let v = this.props.v
+    let s = this.state
+    let v = this.props.display
+
     return (
-      <div id='New' style={{display: v}}>
-        <textarea className='subcontainer' onChange={this.titleNew} value={this.state.title} />
-        <textarea className='subcontainer' onChange={this.ingredientsNew} value={this.state.ingredients} />
-        <textarea className='subcontainer' onChange={this.procedureNew} value={this.state.procedure} />
-        <textarea className='subcontainer' onChange={this.categoryNew} value={this.state.category} />
+      <div className='change' style={{display: v}}>
+        <textarea className='subcontainer headl' onChange={this.titleNew} value={s.title} />
+        <textarea className='subcontainer ingds' onChange={this.ingredientsNew} value={s.ingredients} />
+        <textarea className='subcontainer proc' onChange={this.procedureNew} value={s.procedure} />
+        {selectCat(this.state.category, this.categoryNew)}
+        <br />
         <button onClick={this.save}>Save</button><br />
       </div>
     )
@@ -527,22 +681,28 @@ class Delete extends React.Component {
   }
 
   delete (e) {
-    this.props.force(navStorageChange(deleteRecipe(this.props.item.id)))
+    this.props.force(navItem(deleteRecipe(this.props.item.id)), RELOAD)
   }
 
   render () {
-    let a = this.props
-    let v = a.v
-    let i = a.item
-    console.log('render: Delete:', this.props.item)
+    let s = this.props.state
+    let v = this.props.display
+    let i = this.props.item
+
+    if (! i) {
+      i = {
+        id: '',
+        title: '',
+        ingredients: '',
+        procedure: '',
+        category: 0,
+      }
+    }
+
+    let b = <button onClick={this.delete}>Ok</button>
+
     return (
-      <div id='Delete' style={{display: v}}>
-        <div className='subcontainer'>{i.title}</div>
-        <div className='subcontainer'>{i.ingredients}</div>
-        <div className='subcontainer'>{i.procedure}</div>
-        <div className='subcontainer'>{i.category}</div>
-        <button onClick={this.delete}>Ok</button><br />
-      </div>
+      <Show i={i} v={v} b={b}/>
     )
   }
 }
@@ -557,6 +717,7 @@ class Nav extends React.Component {
   constructor (props) {
     super(props)
 
+    this.navFilter = this.navFilter.bind(this)
     this.navSelect = this.navSelect.bind(this)
     this.navView = this.navView.bind(this)
     this.navEdit = this.navEdit.bind(this)
@@ -565,28 +726,30 @@ class Nav extends React.Component {
     this.disable = this.disable.bind(this)
   }
 
-  navSelect (e) { this.props.force(navSelect(e)) }
-  navView (e) { this.props.force(navView(e)) }
-  navEdit (e) { this.props.force(navEdit(e)) }
-  navNew (e) { this.props.force(navNew(e)) }
-  navDelete (e) { this.props.force(navDelete(e)) }
+  navFilter () { this.props.force(navFilter()) }
+  navSelect () { if ( this.props.data) this.props.force(navSelect()) }
+  navView () { if ( this.props.data) this.props.force(navView()) }
+  navEdit () { if ( this.props.data) this.props.force(navEdit()) }
+  navNew () { this.props.force(navNew()) }
+  navDelete () { if ( this.props.data) this.props.force(navDelete()) }
   disable (e) { e.preventDefault() }
 
   render () {
-    console.log('render: Nav')
-    let bgSelect = this.props.v.select === 'block' ? {backgroundColor: 'gray'} : {backgroundColor: '#CCCCCC'}
-    let bgView = this.props.v.view === 'block' ? {backgroundColor: 'gray'} : {backgroundColor: '#CCCCCC'}
-    let bgEdit = this.props.v.edit === 'block' ? {backgroundColor: 'gray'} : {backgroundColor: '#CCCCCC'}
-    let bgNew = this.props.v.new === 'block' ? {backgroundColor: 'gray'} : {backgroundColor: '#CCCCCC'}
-    let bgDelete = this.props.v.delete === 'block' ? {backgroundColor: 'gray', float: 'right'} : {backgroundColor: '#CCCCCC', float: 'right'}
+    let nFilter = this.props.v.filter === 'block' ? 'navActive' : 'navPassive'
+    let nSelect = this.props.v.select === 'block' ? 'navActive' : 'navPassive'
+    let nView = this.props.v.view === 'block' ? 'navActive' : 'navPassive'
+    let nDelete = this.props.v.delete === 'block' ? 'navActive' : 'navPassive'
+    let nNew = this.props.v.new === 'block' ? 'navActive' : 'navPassive'
+    let nEdit = this.props.v.edit === 'block' ? 'navActive' : 'navPassive'
 
     return (
       <div className='w3-bar'>
-        <div className='w3-bar-item w3-button' style={bgSelect} onMouseDown={this.navSelect} onMouseOut={this.disable}>Select</div>
-        <div className='w3-bar-item w3-button' style={bgView} onClick={this.navView}>View</div>
-        <div className='w3-bar-item w3-button' style={bgEdit} onClick={this.navEdit}>Edit</div>
-        <div className='w3-bar-item w3-button' style={bgNew} onClick={this.navNew}>New</div>
-        <div className='w3-bar-item w3-button' style={bgDelete} onClick={this.navDelete}>Delete</div>
+        <div className={'w3-bar-item w3-button ' + nFilter} onClick={this.navFilter}>Filter</div>
+        <div className={'w3-bar-item w3-button ' + nSelect} onMouseDown={this.navSelect} onMouseOut={this.disable}>Select</div>
+        <div className={'w3-bar-item w3-button ' + nView} onClick={this.navView}>View</div>
+        <div className={'w3-bar-item w3-button ' + nDelete} style={{float: 'right'}} onClick={this.navDelete}>Delete</div>
+        <div className={'w3-bar-item w3-button ' + nNew} style={{float: 'right'}} onClick={this.navNew}>New</div>
+        <div className={'w3-bar-item w3-button ' + nEdit} style={{float: 'right'}} onClick={this.navEdit}>Edit</div>
       </div>
     )
   };
@@ -600,18 +763,18 @@ class Nav extends React.Component {
 
 class Stage extends React.Component {
   render () {
-    let a = this.props
-    let v = a.v
-    let m = a.store.value
-    let i = getRecipe(a.id)
-    console.log('render: Stage:', i)
+    let f = this.props.force
+    let s = this.props.state
+    let v = s.v
+    let i = getRecipe(s.id)
     return (
       <div id='Stage'>
-        <Select v={v.select} m={m} force={a.force} />
-        <View v={v.view} item={i} />
-        <Edit v={v.edit} item={i} force={a.force} />
-        <New v={v.new} item={i} force={a.force} />
-        <Delete v={v.delete} item={i} force={a.force} />
+        <Filter state={s} display={v.filter} force={f} />
+        <Select state={s} display={v.select} force={f} />
+        <View state={s} display={v.view} item={i} />
+        <Edit state={s} display={v.edit} item={i} force={f} />
+        <New state={s} display={v.new} item={i} force={f} />
+        <Delete state={s} display={v.delete} item={i} force={f} />
       </div>
     )
   };
@@ -625,37 +788,36 @@ class Root extends React.Component {
   constructor (props) {
     super(props)
 
-    this.force = (arg) => {
-      if (arg.id === null) {
-        arg.id = store.value[0].id
-      }
-      this.setState(arg)
-    }
-    this.force.bind(this)
-
-    let store = getLocal()
-    let id = store.value[0].id
+    let data = getLocal().value
 
     this.state = {
-      store: store,
-      id: id,
-      v: {
-        select: 'none',
-        view: 'block',
-        edit: 'none',
-        new: 'none',
-        delete: 'none'
-      }
+      data: data,
+      categories: CATEGORY_000,
+      id: data[0].id,
+      v: navView().v
     }
-  };
+
+    this.force = (newState, reload = false) => {
+      if (reload) {
+        let c = newState.categories
+        if (c === undefined) {
+          c = this.state.categories
+        }
+        newState.data = filteredRecipies(c)
+        if (! newState.id && newState.data.length !== 0) {
+          newState.id = newState.data[0].id
+        }
+      }
+      this.setState(newState)
+    }
+  }
 
   render () {
-    console.log('\nrender: Root:', this.state.id)
     return (
       <div id='All' className='w3-container'>
         <div id='Head' className='w3-container w3-border'><h3>Recipe Box</h3></div>
-        <Nav force={this.force} v={this.state.v} />
-        <Stage force={this.force} v={this.state.v} store={this.state.store} id={this.state.id} />
+        <Nav force={this.force} data={this.state.data.length !== 0} v={this.state.v} />
+        <Stage force={this.force} state={this.state} />
       </div>
     )
   }

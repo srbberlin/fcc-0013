@@ -1,14 +1,4 @@
-'use strict';
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-// "use strict";
+"use strict";
 
 // ====================================================
 // Redux section
@@ -17,6 +7,18 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 // ====================================================
 // Reducer command ids
 //
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _verboseCats;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var INIT = '@@redux/INIT'; // Driven by createStore(...)
 var RESTART = 'RESTART'; // Resets the whole storage to a vergin state
@@ -31,53 +33,90 @@ var SET_VISIBILITY_FILTER = 'SET_VISIBILITY_FILTER'; // Narrows the choices
 // Filter values, might be or'd together
 //
 
-var CATEGORY_NONE = 0; // Nothing
+var CATEGORY_000 = 0; // means all !!
 var CATEGORY_001 = 1;
 var CATEGORY_002 = 2;
 var CATEGORY_003 = 4;
 var CATEGORY_004 = 8;
-var CATEGORY_ALL = -1; // All
+var CATEGORY_005 = 16;
+var CATEGORY_ALL = 31;
+
+var allCats = [CATEGORY_001, CATEGORY_002, CATEGORY_003, CATEGORY_004, CATEGORY_005];
+
+var verboseCats = (_verboseCats = {}, _defineProperty(_verboseCats, CATEGORY_001, 'Breakfast'), _defineProperty(_verboseCats, CATEGORY_002, 'Dinner'), _defineProperty(_verboseCats, CATEGORY_003, 'Supper'), _defineProperty(_verboseCats, CATEGORY_004, 'Brunch'), _defineProperty(_verboseCats, CATEGORY_005, 'Vegatarian'), _verboseCats);
 
 // ====================================================
-// Filter values verbose
+// Helper to generate selections
 //
 
-var categories = {
-  CATEGORY_001: 'Breakfast',
-  CATEGORY_002: 'Dinner',
-  CATEGORY_003: 'Supper',
-  CATEGORY_004: 'Vegatrian'
+var selectCat = function selectCat(s, o) {
+  var c = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'cats';
 
-  // ====================================================
-  // Reducer implementing the commands
-  //
+  return React.createElement(
+    'select',
+    { className: c, value: s, onChange: o },
+    allCats.reduce(function (c, d, i, a) {
+      c.push(React.createElement(
+        'option',
+        { key: i, value: d },
+        verboseCats[d]
+      ));
+      return c;
+    }, [])
+  );
+};
 
-};var recipes = function recipes(state, action) {
+var filterCats = function filterCats(s, o) {
+  var cls = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'sels';
+
+  return allCats.reduce(function (c, d, i, a) {
+    if (d >= 0) {
+      c.push(React.createElement(
+        'div',
+        { className: cls, key: i, id: verboseCats[d] },
+        React.createElement('input', { type: 'checkbox', value: d, checked: s & d, onChange: o }),
+        verboseCats[d]
+      ));
+    }
+    return c;
+  }, []);
+};
+
+var getVerboseCat = function getVerboseCat(d) {
+  return verboseCats[d];
+};
+
+// ====================================================
+// Redux section
+//
+
+// ====================================================
+// Reducer implementing the commands
+//
+
+var recipes = function recipes(state, action) {
   var res = void 0;
   switch (action.type) {
     case INIT:
       res = {
-        visibility: -1,
         value: [] };
       break;
     case RESTART:
       res = {
-        visibility: action.state.visibility,
         value: action.state.value };
       break;
     case ADD_RECIPE:
       res = {
-        visibility: state.visibility,
         value: state.value.concat([{
           id: action.id,
           title: action.title,
           ingredients: action.ingredients,
           procedure: action.procedure,
-          category: action.category }]) };
+          category: action.category }])
+      };
       break;
     case CHANGE_RECIPE:
       res = {
-        visibility: state.visibility,
         value: state.value.map(function (act) {
           if (act.id === action.id) {
             act.title = action.title;
@@ -91,16 +130,9 @@ var categories = {
       break;
     case DELETE_RECIPE:
       res = {
-        visibility: state.visibility,
         value: state.value.filter(function (act) {
           return act.id !== action.id;
         })
-      };
-      break;
-    case SET_VISIBILITY_FILTER:
-      res = {
-        visibility: action.value,
-        value: state.value
       };
       break;
     default:
@@ -109,13 +141,17 @@ var categories = {
   return res;
 };
 
+var store = Redux.createStore(recipes);
+
 // ====================================================
-// Return command parameters
+// Construct commands
 //
 
 // ====================================================
+// Replaces the whole state with a new one
+//
 // Parameters
-//   state: { visibility: <number>, value: <array of recipes> }
+//   state: { value: <array of recipes> }
 //
 
 var restart = function restart(state) {
@@ -125,6 +161,9 @@ var restart = function restart(state) {
   };
 };
 
+// ====================================================
+// Add a new recipe
+//
 // ====================================================
 // Parameters
 //   t, i, p, c: self explanatory
@@ -142,17 +181,8 @@ var add = function add(t, i, p, c) {
 };
 
 // ====================================================
-// Parameters
-//   id: UUID of the recipe
+// Change all of the recipies fields
 //
-
-var get = function get(id) {
-  return {
-    type: GET_RECIPE,
-    value: id
-  };
-};
-
 // ====================================================
 // Parameters
 //   id, t, i, p, c: self explanatory
@@ -170,6 +200,9 @@ var change = function change(id, t, i, p, c) {
 };
 
 // ====================================================
+// Delete one recipe
+//
+// ====================================================
 // Parameters
 //   id: UUID of the recipe
 //
@@ -182,19 +215,7 @@ var del = function del(id) {
 };
 
 // ====================================================
-// Parameters
-//   v: ored value of none ore more filter values
-//
-
-var vis = function vis(v) {
-  return {
-    type: SET_VISIBILITY_FILTER,
-    value: v
-  };
-};
-
-// ====================================================
-// Using the local storage
+// Using the browsers local storage
 //
 
 // ====================================================
@@ -208,15 +229,15 @@ var storeLocal = function storeLocal() {
 
 // ====================================================
 // Retrieve the state of the store from
-// the browsers local storage
+// the browsers local storage. Set a default entry
+// if there's none
 //
 
 var getLocal = function getLocal() {
   if (window.localStorage.recipes) {
     store.dispatch(restart(JSON.parse(window.localStorage.recipes)));
   } else {
-    store.dispatch(add('der erste Versuch', '1. Mut, \n2. Geld, \n3. Geduld', 'und viel mehr', CATEGORY_001));
-    store.dispatch(add('der zweite Versuch', 'Weas man so braucht ...', 'auch nicht viel mehr', CATEGORY_002));
+    store.dispatch(add('Honey Garlic Chicken with Rosemary', '3 tablespoons butter\n' + '1 1/2 tablespoons garlic powder\n' + '2 tablespoons rosemary\n' + 'salt and ground black pepper\n' + '1/2 cup of honey\n' + '6 skinless chicken thighs', 'Preheat oven to 375 degrees F (190 degrees C).\n\n' + 'Melt butter in a large saucepan over medium heat. Add garlic powder, rosemary, salt, and pepper; simmer until flavors combine, about 1 minute. Stir in honey; bring to a boil. Reduce heat to low. Dip chicken into sauce, 1 piece at a time, until coated. Place chicken on a 9x13-inch baking pan; pour remaining sauce over chicken.\n\n' + 'Bake chicken in the preheated oven until no longer pink at the bone and the juices run clear, about 30 minutes. An instant-read thermometer inserted near the bone should read 165 degrees F (74 degrees C). Remove from oven; immediately turn over chicken with tongs to coat the top with sauce.', CATEGORY_001));
     storeLocal();
   }
   var res = store.getState();
@@ -224,7 +245,28 @@ var getLocal = function getLocal() {
 };
 
 // ====================================================
-// Retrieves one recipe from storage
+// Helper functions to provide the store's data
+//
+
+// ====================================================
+// Get recipies according the filtersetting. The filter
+// defaults to all
+//
+
+var filteredRecipies = function filteredRecipies() {
+  var c = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : CATEGORY_000;
+
+  var r = store.getState().value.reduce(function (acc, act) {
+    if (c === CATEGORY_000 || (c & act.category) !== 0) {
+      acc.push(act);
+    }
+    return acc;
+  }, []);
+  return r;
+};
+
+// ====================================================
+// Get one recipe by id
 //
 
 var getRecipe = function getRecipe(id) {
@@ -233,121 +275,162 @@ var getRecipe = function getRecipe(id) {
   })[0];
 };
 
+// ====================================================
+// Add one recipe
+//
+
 var newRecipe = function newRecipe(t, i, p, c) {
   var r = add(t, i, p, c);
   store.dispatch(r);
+  storeLocal();
   return r.id;
 };
+
+// ====================================================
+// Change one recipe
+//
 
 var changeRecipe = function changeRecipe(id, t, i, p, c) {
   var r = change(id, t, i, p, c);
   store.dispatch(r);
+  storeLocal();
   return r.id;
 };
+
+// ====================================================
+// Delete one recipe
+//
 
 var deleteRecipe = function deleteRecipe(id) {
   var r = del(id);
   store.dispatch(r);
+  storeLocal();
   return null;
 };
-
-var store = Redux.createStore(recipes);
 
 // ====================================================
 // Eventhandling
 //
 // All functions return objects used by the setState
-// function of the toplevel componet given to the
+// function of the toplevel componet by the
 // force function implemented there. The force function
 // is called by the eventhandlers of the navigation.
 //
 // Parameters and returned values are self explanatory.
 //
 
-var navStorageChange = function navStorageChange(id) {
+var RELOAD = true;
+
+var setCategories = function setCategories(v) {
+  return { categories: v };
+};
+
+var valFilter = function valFilter() {
   return {
-    store: store.getState(),
-    id: id,
-    v: {
-      select: 'none',
-      view: 'block',
-      new: 'none',
-      edit: 'none',
-      delete: 'none'
-    }
+    filter: 'block',
+    select: 'none',
+    view: 'none',
+    new: 'none',
+    edit: 'none',
+    delete: 'none'
   };
 };
 
-var _navItem = function _navItem(id) {
+var valSelect = function valSelect() {
   return {
-    id: id,
-    v: {
-      select: 'none',
-      view: 'block',
-      new: 'none',
-      edit: 'none',
-      delete: 'none'
-    }
+    filter: 'none',
+    select: 'block',
+    view: 'none',
+    new: 'none',
+    edit: 'none',
+    delete: 'none'
+  };
+};
+
+var valView = function valView() {
+  return {
+    filter: 'none',
+    select: 'none',
+    view: 'block',
+    new: 'none',
+    edit: 'none',
+    delete: 'none'
+  };
+};
+
+var valNew = function valNew() {
+  return {
+    filter: 'none',
+    select: 'none',
+    view: 'none',
+    new: 'block',
+    edit: 'none',
+    delete: 'none'
+  };
+};
+
+var valEdit = function valEdit() {
+  return {
+    filter: 'none',
+    select: 'none',
+    view: 'none',
+    new: 'none',
+    edit: 'block',
+    delete: 'none'
+  };
+};
+
+var valDelete = function valDelete() {
+  return {
+    filter: 'none',
+    select: 'none',
+    view: 'none',
+    new: 'none',
+    edit: 'none',
+    delete: 'block'
+  };
+};
+
+var _navFilter = function _navFilter() {
+  return {
+    v: valFilter()
   };
 };
 
 var _navSelect = function _navSelect() {
   return {
-    v: {
-      select: 'block',
-      view: 'none',
-      new: 'none',
-      edit: 'none',
-      delete: 'none'
-    }
+    v: valSelect()
   };
 };
 
 var _navView = function _navView() {
   return {
-    v: {
-      select: 'none',
-      view: 'block',
-      new: 'none',
-      edit: 'none',
-      delete: 'none'
-    }
+    v: valView()
   };
 };
 
 var _navNew = function _navNew() {
   return {
-    v: {
-      select: 'none',
-      view: 'none',
-      new: 'block',
-      edit: 'none',
-      delete: 'none'
-    }
+    v: valNew()
   };
 };
 
 var _navEdit = function _navEdit() {
   return {
-    v: {
-      select: 'none',
-      view: 'none',
-      new: 'none',
-      edit: 'block',
-      delete: 'none'
-    }
+    v: valEdit()
   };
 };
 
 var _navDelete = function _navDelete() {
   return {
-    v: {
-      select: 'none',
-      view: 'none',
-      new: 'none',
-      edit: 'none',
-      delete: 'block'
-    }
+    v: valDelete()
+  };
+};
+
+var navItem = function navItem(id) {
+  return {
+    id: id,
+    v: valView()
   };
 };
 
@@ -355,47 +438,78 @@ var _navDelete = function _navDelete() {
 // React section
 //
 
-var Select = function (_React$Component) {
-  _inherits(Select, _React$Component);
+var Filter = function (_React$Component) {
+  _inherits(Filter, _React$Component);
 
-  function Select(props) {
-    _classCallCheck(this, Select);
+  function Filter(props) {
+    _classCallCheck(this, Filter);
 
-    var _this = _possibleConstructorReturn(this, (Select.__proto__ || Object.getPrototypeOf(Select)).call(this, props));
+    var _this = _possibleConstructorReturn(this, (Filter.__proto__ || Object.getPrototypeOf(Filter)).call(this, props));
 
-    _this.navItem = _this.navItem.bind(_this);
+    _this.setCats = _this.setCats.bind(_this);
     return _this;
   }
 
-  _createClass(Select, [{
-    key: 'navItem',
-    value: function navItem(e) {
-      this.props.force(_navItem(e.target.id));
+  _createClass(Filter, [{
+    key: 'setCats',
+    value: function setCats(e) {
+      this.props.force(setCategories(this.props.state.categories ^ e.target.value), RELOAD);
     }
   }, {
     key: 'render',
     value: function render() {
-      var _this2 = this;
-
-      console.log('render: Select');
-      var a = this.props;
-      var v = a.v;
-      var m = a.m;
-      var j = 0;
-      var r = [];
+      var v = this.props.display;
       return React.createElement(
         'div',
-        { id: 'Select', style: { display: v } },
-        m.reduce(function (val, act) {
-          // if (true) {
-          r = val.concat([React.createElement(
+        { className: 'filter', style: { display: v } },
+        filterCats(this.props.state.categories, this.setCats)
+      );
+    }
+  }]);
+
+  return Filter;
+}(React.Component);
+
+var Select = function (_React$Component2) {
+  _inherits(Select, _React$Component2);
+
+  function Select(props) {
+    _classCallCheck(this, Select);
+
+    var _this2 = _possibleConstructorReturn(this, (Select.__proto__ || Object.getPrototypeOf(Select)).call(this, props));
+
+    _this2.selectItem = _this2.selectItem.bind(_this2);
+    return _this2;
+  }
+
+  _createClass(Select, [{
+    key: 'selectItem',
+    value: function selectItem(e) {
+      this.props.force(navItem(e.target.id));
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this3 = this;
+
+      var s = this.props.state;
+      var v = this.props.display;
+      var a = s.data;
+      return React.createElement(
+        'div',
+        { className: 'select', style: { display: v } },
+        a !== undefined && a.reduce(function (val, act, i) {
+          val.push(React.createElement(
             'div',
-            { className: 'selitem', key: ++j, id: act.id, onClick: _this2.navItem },
+            {
+              className: 'selitem',
+              key: i,
+              id: act.id,
+              onClick: _this3.selectItem },
             act.title
-          )]);
-          // }
-          return r;
-        }, r)
+          ));
+          return val;
+        }, [])
       );
     }
   }]);
@@ -403,79 +517,107 @@ var Select = function (_React$Component) {
   return Select;
 }(React.Component);
 
-var View = function (_React$Component2) {
-  _inherits(View, _React$Component2);
+var Show = function (_React$Component3) {
+  _inherits(Show, _React$Component3);
+
+  function Show(props) {
+    _classCallCheck(this, Show);
+
+    return _possibleConstructorReturn(this, (Show.__proto__ || Object.getPrototypeOf(Show)).call(this, props));
+  }
+
+  _createClass(Show, [{
+    key: 'render',
+    value: function render() {
+      return React.createElement(
+        'div',
+        { className: 'show', style: { display: this.props.v } },
+        React.createElement(
+          'h3',
+          { className: 'subcontainer' },
+          this.props.i.title
+        ),
+        React.createElement(
+          'h5',
+          { className: 'subcontainer' },
+          getVerboseCat(this.props.i.category)
+        ),
+        React.createElement(
+          'div',
+          { className: 'subcontainer' },
+          React.createElement(
+            'h5',
+            null,
+            'Ingredients'
+          ),
+          this.props.i.ingredients
+        ),
+        React.createElement(
+          'div',
+          { className: 'subcontainer' },
+          React.createElement(
+            'h5',
+            null,
+            'Procedure'
+          ),
+          this.props.i.procedure
+        ),
+        this.props.b
+      );
+    }
+  }]);
+
+  return Show;
+}(React.Component);
+
+var View = function (_React$Component4) {
+  _inherits(View, _React$Component4);
 
   function View(props) {
     _classCallCheck(this, View);
 
-    var _this3 = _possibleConstructorReturn(this, (View.__proto__ || Object.getPrototypeOf(View)).call(this, props));
-
-    _this3.title = '';
-    _this3.ingedients = '';
-    _this3.procedure = '';
-    _this3.category = '';
-    return _this3;
+    return _possibleConstructorReturn(this, (View.__proto__ || Object.getPrototypeOf(View)).call(this, props));
   }
 
   _createClass(View, [{
     key: 'render',
     value: function render() {
-      console.log('render: View:', this.props.item);
-      var v = this.props.v;
+      var v = this.props.display;
       var i = this.props.item;
-
-      this.title = i.title;
-      this.ingredients = i.ingredients;
-      this.procedure = i.procedure;
-      this.category = i.category;
-
-      return React.createElement(
-        'div',
-        { id: 'View', style: { display: v } },
-        React.createElement(
-          'div',
-          { className: 'subcontainer' },
-          this.title
-        ),
-        React.createElement(
-          'div',
-          { className: 'subcontainer' },
-          this.ingredients
-        ),
-        React.createElement(
-          'div',
-          { className: 'subcontainer' },
-          this.procedure
-        ),
-        React.createElement(
-          'div',
-          { className: 'subcontainer' },
-          this.category
-        )
-      );
+      if (!i) {
+        i = {
+          id: '',
+          title: '',
+          ingredients: '',
+          procedure: '',
+          category: 0
+        };
+      }
+      return React.createElement(Show, { i: i, v: v });
     }
   }]);
 
   return View;
 }(React.Component);
 
-var Edit = function (_React$Component3) {
-  _inherits(Edit, _React$Component3);
+var Edit = function (_React$Component5) {
+  _inherits(Edit, _React$Component5);
 
   function Edit(props) {
     _classCallCheck(this, Edit);
 
-    var _this4 = _possibleConstructorReturn(this, (Edit.__proto__ || Object.getPrototypeOf(Edit)).call(this, props));
+    var _this6 = _possibleConstructorReturn(this, (Edit.__proto__ || Object.getPrototypeOf(Edit)).call(this, props));
 
-    _this4.titleNew = _this4.titleNew.bind(_this4);
-    _this4.ingredientsNew = _this4.ingredientsNew.bind(_this4);
-    _this4.procedureNew = _this4.procedureNew.bind(_this4);
-    _this4.categoryNew = _this4.categoryNew.bind(_this4);
-    _this4.save = _this4.save.bind(_this4);
+    _this6.titleNew = _this6.titleNew.bind(_this6);
+    _this6.ingredientsNew = _this6.ingredientsNew.bind(_this6);
+    _this6.procedureNew = _this6.procedureNew.bind(_this6);
+    _this6.categoryNew = _this6.categoryNew.bind(_this6);
+    _this6.save = _this6.save.bind(_this6);
+    _this6.cancel = _this6.cancel.bind(_this6);
 
-    var i = _this4.props.item;
-    _this4.state = {
+    var i = _this6.props.item;
+
+    _this6.state = {
       id: i.id,
       title: i.title,
       ingredients: i.ingredients,
@@ -483,7 +625,7 @@ var Edit = function (_React$Component3) {
       category: i.category,
       reload: true
     };
-    return _this4;
+    return _this6;
   }
 
   _createClass(Edit, [{
@@ -509,15 +651,31 @@ var Edit = function (_React$Component3) {
   }, {
     key: 'save',
     value: function save(e) {
-      this.setState({ reload: false });
-      this.props.force(_navItem(changeRecipe(this.state.id, this.state.title, this.state.ingredients, this.state.procedure, this.state.category)));
-      storeLocal();
+      this.setState({ reload: true });
+      this.props.force(setCategories(this.props.state.categories | e.target.value));
+      this.props.force(navItem(changeRecipe(this.state.id, this.state.title, this.state.ingredients, this.state.procedure, this.state.category)));
+    }
+  }, {
+    key: 'cancel',
+    value: function cancel(e) {
+      this.setState({ reload: true });
+      this.props.force(navItem(this.state.id));
     }
   }, {
     key: 'componentWillReceiveProps',
-    value: function componentWillReceiveProps() {
+    value: function componentWillReceiveProps(next) {
       if (this.state.reload) {
-        var i = this.props.item;
+        var i = next.item;
+
+        if (!i) {
+          i = {
+            id: '',
+            title: '',
+            ingredients: '',
+            procedure: '',
+            category: CATEGORY_001
+          };
+        }
 
         this.setState({
           id: i.id,
@@ -531,20 +689,26 @@ var Edit = function (_React$Component3) {
   }, {
     key: 'render',
     value: function render() {
-      console.log('render: Edit:', this.props.item);
-      var v = this.props.v;
-
+      var s = this.state;
+      var v = this.props.display;
       return React.createElement(
         'div',
-        { id: 'Edit', style: { display: v } },
-        React.createElement('textarea', { className: 'subcontainer', onChange: this.titleNew, value: this.state.title }),
-        React.createElement('textarea', { className: 'subcontainer', onChange: this.ingredientsNew, value: this.state.ingredients }),
-        React.createElement('textarea', { className: 'subcontainer', onChange: this.procedureNew, value: this.state.procedure }),
-        React.createElement('textarea', { className: 'subcontainer', onChange: this.categoryNew, value: this.state.category }),
+        { className: 'change', style: { display: v } },
+        React.createElement('textarea', { className: 'subcontainer headl', onChange: this.titleNew, value: s.title }),
+        React.createElement('textarea', { className: 'subcontainer ingds', onChange: this.ingredientsNew, value: s.ingredients }),
+        React.createElement('textarea', { className: 'subcontainer proc', onChange: this.procedureNew, value: s.procedure }),
+        selectCat(this.state.category, this.categoryNew),
+        React.createElement('br', null),
         React.createElement(
           'button',
           { onClick: this.save },
           'Save'
+        ),
+        React.createElement('br', null),
+        React.createElement(
+          'button',
+          { onClick: this.cancel },
+          'Cancel'
         ),
         React.createElement('br', null)
       );
@@ -554,27 +718,27 @@ var Edit = function (_React$Component3) {
   return Edit;
 }(React.Component);
 
-var New = function (_React$Component4) {
-  _inherits(New, _React$Component4);
+var New = function (_React$Component6) {
+  _inherits(New, _React$Component6);
 
   function New(props) {
     _classCallCheck(this, New);
 
-    var _this5 = _possibleConstructorReturn(this, (New.__proto__ || Object.getPrototypeOf(New)).call(this, props));
+    var _this7 = _possibleConstructorReturn(this, (New.__proto__ || Object.getPrototypeOf(New)).call(this, props));
 
-    _this5.state = {
+    _this7.state = {
       title: '',
       ingredients: '',
       procedure: '',
-      category: ''
+      category: CATEGORY_001
     };
 
-    _this5.titleNew = _this5.titleNew.bind(_this5);
-    _this5.ingredientsNew = _this5.ingredientsNew.bind(_this5);
-    _this5.procedureNew = _this5.procedureNew.bind(_this5);
-    _this5.categoryNew = _this5.categoryNew.bind(_this5);
-    _this5.save = _this5.save.bind(_this5);
-    return _this5;
+    _this7.titleNew = _this7.titleNew.bind(_this7);
+    _this7.ingredientsNew = _this7.ingredientsNew.bind(_this7);
+    _this7.procedureNew = _this7.procedureNew.bind(_this7);
+    _this7.categoryNew = _this7.categoryNew.bind(_this7);
+    _this7.save = _this7.save.bind(_this7);
+    return _this7;
   }
 
   _createClass(New, [{
@@ -600,27 +764,31 @@ var New = function (_React$Component4) {
   }, {
     key: 'save',
     value: function save(e) {
-      this.props.force(navStorageChange(newRecipe(this.state.title, this.state.ingredients, this.state.procedure, this.state.category)));
+      if (this.props.state.categories) {
+        this.props.force(setCategories(this.props.state.categories | this.state.category));
+      }
+      this.props.force(navItem(newRecipe(this.state.title, this.state.ingredients, this.state.procedure, this.state.category)), RELOAD);
       this.setState({
         title: '',
         ingredients: '',
         procedure: '',
-        category: ''
+        category: CATEGORY_001
       });
-      storeLocal();
     }
   }, {
     key: 'render',
     value: function render() {
-      console.log('render: New:');
-      var v = this.props.v;
+      var s = this.state;
+      var v = this.props.display;
+
       return React.createElement(
         'div',
-        { id: 'New', style: { display: v } },
-        React.createElement('textarea', { className: 'subcontainer', onChange: this.titleNew, value: this.state.title }),
-        React.createElement('textarea', { className: 'subcontainer', onChange: this.ingredientsNew, value: this.state.ingredients }),
-        React.createElement('textarea', { className: 'subcontainer', onChange: this.procedureNew, value: this.state.procedure }),
-        React.createElement('textarea', { className: 'subcontainer', onChange: this.categoryNew, value: this.state.category }),
+        { className: 'change', style: { display: v } },
+        React.createElement('textarea', { className: 'subcontainer headl', onChange: this.titleNew, value: s.title }),
+        React.createElement('textarea', { className: 'subcontainer ingds', onChange: this.ingredientsNew, value: s.ingredients }),
+        React.createElement('textarea', { className: 'subcontainer proc', onChange: this.procedureNew, value: s.procedure }),
+        selectCat(this.state.category, this.categoryNew),
+        React.createElement('br', null),
         React.createElement(
           'button',
           { onClick: this.save },
@@ -634,60 +802,47 @@ var New = function (_React$Component4) {
   return New;
 }(React.Component);
 
-var Delete = function (_React$Component5) {
-  _inherits(Delete, _React$Component5);
+var Delete = function (_React$Component7) {
+  _inherits(Delete, _React$Component7);
 
   function Delete(props) {
     _classCallCheck(this, Delete);
 
-    var _this6 = _possibleConstructorReturn(this, (Delete.__proto__ || Object.getPrototypeOf(Delete)).call(this, props));
+    var _this8 = _possibleConstructorReturn(this, (Delete.__proto__ || Object.getPrototypeOf(Delete)).call(this, props));
 
-    _this6.delete = _this6.delete.bind(_this6);
-    return _this6;
+    _this8.delete = _this8.delete.bind(_this8);
+    return _this8;
   }
 
   _createClass(Delete, [{
     key: 'delete',
     value: function _delete(e) {
-      this.props.force(navStorageChange(deleteRecipe(this.props.item.id)));
+      this.props.force(navItem(deleteRecipe(this.props.item.id)), RELOAD);
     }
   }, {
     key: 'render',
     value: function render() {
-      var a = this.props;
-      var v = a.v;
-      var i = a.item;
-      console.log('render: Delete:', this.props.item);
-      return React.createElement(
-        'div',
-        { id: 'Delete', style: { display: v } },
-        React.createElement(
-          'div',
-          { className: 'subcontainer' },
-          i.title
-        ),
-        React.createElement(
-          'div',
-          { className: 'subcontainer' },
-          i.ingredients
-        ),
-        React.createElement(
-          'div',
-          { className: 'subcontainer' },
-          i.procedure
-        ),
-        React.createElement(
-          'div',
-          { className: 'subcontainer' },
-          i.category
-        ),
-        React.createElement(
-          'button',
-          { onClick: this.delete },
-          'Ok'
-        ),
-        React.createElement('br', null)
+      var s = this.props.state;
+      var v = this.props.display;
+      var i = this.props.item;
+
+      if (!i) {
+        i = {
+          id: '',
+          title: '',
+          ingredients: '',
+          procedure: '',
+          category: 0
+        };
+      }
+
+      var b = React.createElement(
+        'button',
+        { onClick: this.delete },
+        'Ok'
       );
+
+      return React.createElement(Show, { i: i, v: v, b: b });
     }
   }]);
 
@@ -700,47 +855,53 @@ var Delete = function (_React$Component5) {
 // All navigations.
 //
 
-var Nav = function (_React$Component6) {
-  _inherits(Nav, _React$Component6);
+var Nav = function (_React$Component8) {
+  _inherits(Nav, _React$Component8);
 
   function Nav(props) {
     _classCallCheck(this, Nav);
 
-    var _this7 = _possibleConstructorReturn(this, (Nav.__proto__ || Object.getPrototypeOf(Nav)).call(this, props));
+    var _this9 = _possibleConstructorReturn(this, (Nav.__proto__ || Object.getPrototypeOf(Nav)).call(this, props));
 
-    _this7.navSelect = _this7.navSelect.bind(_this7);
-    _this7.navView = _this7.navView.bind(_this7);
-    _this7.navEdit = _this7.navEdit.bind(_this7);
-    _this7.navNew = _this7.navNew.bind(_this7);
-    _this7.navDelete = _this7.navDelete.bind(_this7);
-    _this7.disable = _this7.disable.bind(_this7);
-    return _this7;
+    _this9.navFilter = _this9.navFilter.bind(_this9);
+    _this9.navSelect = _this9.navSelect.bind(_this9);
+    _this9.navView = _this9.navView.bind(_this9);
+    _this9.navEdit = _this9.navEdit.bind(_this9);
+    _this9.navNew = _this9.navNew.bind(_this9);
+    _this9.navDelete = _this9.navDelete.bind(_this9);
+    _this9.disable = _this9.disable.bind(_this9);
+    return _this9;
   }
 
   _createClass(Nav, [{
+    key: 'navFilter',
+    value: function navFilter() {
+      this.props.force(_navFilter());
+    }
+  }, {
     key: 'navSelect',
-    value: function navSelect(e) {
-      this.props.force(_navSelect(e));
+    value: function navSelect() {
+      if (this.props.data) this.props.force(_navSelect());
     }
   }, {
     key: 'navView',
-    value: function navView(e) {
-      this.props.force(_navView(e));
+    value: function navView() {
+      if (this.props.data) this.props.force(_navView());
     }
   }, {
     key: 'navEdit',
-    value: function navEdit(e) {
-      this.props.force(_navEdit(e));
+    value: function navEdit() {
+      if (this.props.data) this.props.force(_navEdit());
     }
   }, {
     key: 'navNew',
-    value: function navNew(e) {
-      this.props.force(_navNew(e));
+    value: function navNew() {
+      this.props.force(_navNew());
     }
   }, {
     key: 'navDelete',
-    value: function navDelete(e) {
-      this.props.force(_navDelete(e));
+    value: function navDelete() {
+      if (this.props.data) this.props.force(_navDelete());
     }
   }, {
     key: 'disable',
@@ -750,40 +911,45 @@ var Nav = function (_React$Component6) {
   }, {
     key: 'render',
     value: function render() {
-      console.log('render: Nav');
-      var bgSelect = this.props.v.select === 'block' ? { backgroundColor: 'gray' } : { backgroundColor: '#CCCCCC' };
-      var bgView = this.props.v.view === 'block' ? { backgroundColor: 'gray' } : { backgroundColor: '#CCCCCC' };
-      var bgEdit = this.props.v.edit === 'block' ? { backgroundColor: 'gray' } : { backgroundColor: '#CCCCCC' };
-      var bgNew = this.props.v.new === 'block' ? { backgroundColor: 'gray' } : { backgroundColor: '#CCCCCC' };
-      var bgDelete = this.props.v.delete === 'block' ? { backgroundColor: 'gray', float: 'right' } : { backgroundColor: '#CCCCCC', float: 'right' };
+      var nFilter = this.props.v.filter === 'block' ? 'navActive' : 'navPassive';
+      var nSelect = this.props.v.select === 'block' ? 'navActive' : 'navPassive';
+      var nView = this.props.v.view === 'block' ? 'navActive' : 'navPassive';
+      var nDelete = this.props.v.delete === 'block' ? 'navActive' : 'navPassive';
+      var nNew = this.props.v.new === 'block' ? 'navActive' : 'navPassive';
+      var nEdit = this.props.v.edit === 'block' ? 'navActive' : 'navPassive';
 
       return React.createElement(
         'div',
         { className: 'w3-bar' },
         React.createElement(
           'div',
-          { className: 'w3-bar-item w3-button', style: bgSelect, onMouseDown: this.navSelect, onMouseOut: this.disable },
+          { className: 'w3-bar-item w3-button ' + nFilter, onClick: this.navFilter },
+          'Filter'
+        ),
+        React.createElement(
+          'div',
+          { className: 'w3-bar-item w3-button ' + nSelect, onMouseDown: this.navSelect, onMouseOut: this.disable },
           'Select'
         ),
         React.createElement(
           'div',
-          { className: 'w3-bar-item w3-button', style: bgView, onClick: this.navView },
+          { className: 'w3-bar-item w3-button ' + nView, onClick: this.navView },
           'View'
         ),
         React.createElement(
           'div',
-          { className: 'w3-bar-item w3-button', style: bgEdit, onClick: this.navEdit },
-          'Edit'
+          { className: 'w3-bar-item w3-button ' + nDelete, style: { float: 'right' }, onClick: this.navDelete },
+          'Delete'
         ),
         React.createElement(
           'div',
-          { className: 'w3-bar-item w3-button', style: bgNew, onClick: this.navNew },
+          { className: 'w3-bar-item w3-button ' + nNew, style: { float: 'right' }, onClick: this.navNew },
           'New'
         ),
         React.createElement(
           'div',
-          { className: 'w3-bar-item w3-button', style: bgDelete, onClick: this.navDelete },
-          'Delete'
+          { className: 'w3-bar-item w3-button ' + nEdit, style: { float: 'right' }, onClick: this.navEdit },
+          'Edit'
         )
       );
     }
@@ -798,8 +964,8 @@ var Nav = function (_React$Component6) {
 // Includes choices, views and editor fields.
 //
 
-var Stage = function (_React$Component7) {
-  _inherits(Stage, _React$Component7);
+var Stage = function (_React$Component9) {
+  _inherits(Stage, _React$Component9);
 
   function Stage() {
     _classCallCheck(this, Stage);
@@ -810,19 +976,19 @@ var Stage = function (_React$Component7) {
   _createClass(Stage, [{
     key: 'render',
     value: function render() {
-      var a = this.props;
-      var v = a.v;
-      var m = a.store.value;
-      var i = getRecipe(a.id);
-      console.log('render: Stage:', i);
+      var f = this.props.force;
+      var s = this.props.state;
+      var v = s.v;
+      var i = getRecipe(s.id);
       return React.createElement(
         'div',
         { id: 'Stage' },
-        React.createElement(Select, { v: v.select, m: m, force: a.force }),
-        React.createElement(View, { v: v.view, item: i }),
-        React.createElement(Edit, { v: v.edit, item: i, force: a.force }),
-        React.createElement(New, { v: v.new, item: i, force: a.force }),
-        React.createElement(Delete, { v: v.delete, item: i, force: a.force })
+        React.createElement(Filter, { state: s, display: v.filter, force: f }),
+        React.createElement(Select, { state: s, display: v.select, force: f }),
+        React.createElement(View, { state: s, display: v.view, item: i }),
+        React.createElement(Edit, { state: s, display: v.edit, item: i, force: f }),
+        React.createElement(New, { state: s, display: v.new, item: i, force: f }),
+        React.createElement(Delete, { state: s, display: v.delete, item: i, force: f })
       );
     }
   }]);
@@ -834,43 +1000,44 @@ var Stage = function (_React$Component7) {
 // Top level React component
 //
 
-var Root = function (_React$Component8) {
-  _inherits(Root, _React$Component8);
+var Root = function (_React$Component10) {
+  _inherits(Root, _React$Component10);
 
   function Root(props) {
     _classCallCheck(this, Root);
 
-    var _this9 = _possibleConstructorReturn(this, (Root.__proto__ || Object.getPrototypeOf(Root)).call(this, props));
+    var _this11 = _possibleConstructorReturn(this, (Root.__proto__ || Object.getPrototypeOf(Root)).call(this, props));
 
-    _this9.force = function (arg) {
-      if (arg.id === null) {
-        arg.id = store.value[0].id;
-      }
-      _this9.setState(arg);
+    var data = getLocal().value;
+
+    _this11.state = {
+      data: data,
+      categories: CATEGORY_000,
+      id: data[0].id,
+      v: _navView().v
     };
-    _this9.force.bind(_this9);
 
-    var store = getLocal();
-    var id = store.value[0].id;
+    _this11.force = function (newState) {
+      var reload = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
-    _this9.state = {
-      store: store,
-      id: id,
-      v: {
-        select: 'none',
-        view: 'block',
-        edit: 'none',
-        new: 'none',
-        delete: 'none'
+      if (reload) {
+        var c = newState.categories;
+        if (c === undefined) {
+          c = _this11.state.categories;
+        }
+        newState.data = filteredRecipies(c);
+        if (!newState.id && newState.data.length !== 0) {
+          newState.id = newState.data[0].id;
+        }
       }
+      _this11.setState(newState);
     };
-    return _this9;
+    return _this11;
   }
 
   _createClass(Root, [{
     key: 'render',
     value: function render() {
-      console.log('\nrender: Root:', this.state.id);
       return React.createElement(
         'div',
         { id: 'All', className: 'w3-container' },
@@ -883,8 +1050,8 @@ var Root = function (_React$Component8) {
             'Recipe Box'
           )
         ),
-        React.createElement(Nav, { force: this.force, v: this.state.v }),
-        React.createElement(Stage, { force: this.force, v: this.state.v, store: this.state.store, id: this.state.id })
+        React.createElement(Nav, { force: this.force, data: this.state.data.length !== 0, v: this.state.v }),
+        React.createElement(Stage, { force: this.force, state: this.state })
       );
     }
   }]);

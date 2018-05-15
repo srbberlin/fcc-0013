@@ -95,6 +95,10 @@ html {
   width: 100%;
   padding: 5px; }
 
+#Show {
+  padding: 15px;
+}
+
 .subcontainer, .selitem {
   width: 100%;
   margin: 10px 0;
