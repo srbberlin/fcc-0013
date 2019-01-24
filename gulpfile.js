@@ -3,6 +3,7 @@ const sass = require('gulp-sass')
 const sourcemaps = require('gulp-sourcemaps')
 const babel = require('gulp-babel')
 const browserSync = require('browser-sync')
+const del = require('del')
 
 var config = {
   cssin:    __dirname + '/sass/**/*.sass',
@@ -14,25 +15,31 @@ var config = {
   htmlout:  __dirname + '/docs/'
 }
 
+function clean () {
+  return del([config.htmlout + '*'])
+  
+}
+
 function reload () {
+  console.log('reload')
   browserSync.reload()
 }
 
 function html () {
-  let path = config.htmlin
-  return gulp.src(path)
+  return gulp
+    .src(config.htmlin)
     .pipe(gulp.dest(config.htmlout))
 }
 
 function assets () {
-  let path = config.assetsin
-  return gulp.src(path)
+  return gulp
+    .src(config.assetsin)
     .pipe(gulp.dest(config.htmlout))
 }
 
 function css () {
-  let path = config.cssin
-  return gulp.src(path)
+  return gulp
+    .src(config.cssin)
     .pipe(sourcemaps.init())
     .pipe(sass())
     .pipe(sourcemaps.write())
@@ -40,8 +47,8 @@ function css () {
 }
 
 function babl () {
-  let path = config.jsin
-  return gulp.src(path)
+  return gulp
+    .src(config.jsin)
     .pipe(babel().on('error', e => {
       console.log('babel', e)
     }))
@@ -59,8 +66,10 @@ function serve () {
   gulp.watch(config.assetsin, () => gulp.series(assets, reload))
 }
 
-exports.build = function () {
-  gulp.series(build, gulp.parallel(html, assets, babel, sass))
+function build (cb) {
+  gulp.series(clean, gulp.parallel(html, assets, babl, css))(cb)
 }
 
-exports.default = serve
+exports.build = build
+exports.clean = clean
+exports.default = gulp.series(build, serve)
