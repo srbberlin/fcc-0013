@@ -20,9 +20,9 @@ function clean () {
   
 }
 
-function reload () {
-  console.log('reload')
+function reload (cb) {
   browserSync.reload()
+  cb()
 }
 
 function html () {
